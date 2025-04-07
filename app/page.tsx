@@ -97,7 +97,11 @@ export default function P2PConnection() {
   const createConnection = async () => {
     setIsLoading(true)
     try {
-      peerRef.current = new RTCPeerConnection()
+      peerRef.current = new RTCPeerConnection({
+        iceServers: [
+          { urls: "stun:stun.l.google.com:19302" }
+        ]
+      })
       channelRef.current = peerRef.current.createDataChannel("chat")
       configureChannel(channelRef.current)
 
@@ -169,7 +173,11 @@ export default function P2PConnection() {
     setIsLoading(true)
     try {
       const offerObj = JSON.parse(atob(guestOffer))
-      peerRef.current = new RTCPeerConnection()
+      peerRef.current = new RTCPeerConnection({
+        iceServers: [
+          { urls: "stun:stun.l.google.com:19302" }
+        ]
+      })
 
       peerRef.current.ondatachannel = (e) => {
         channelRef.current = e.channel
