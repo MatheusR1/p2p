@@ -98,27 +98,29 @@ export default function P2PConnection() {
     setIsLoading(true)
     try {
       peerRef.current = new RTCPeerConnection({
-        iceServers: [
-          { urls: "stun:stun.l.google.com:19302" }
-        ]
+        iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
       })
       channelRef.current = peerRef.current.createDataChannel("chat")
       configureChannel(channelRef.current)
 
-      peerRef.current.onicecandidate = (e) => {
-        if (!e.candidate) {
-          const offerString = btoa(JSON.stringify(peerRef.current?.localDescription))
-          setOffer(offerString)
-        }
-      }
-
       const offerDescription = await peerRef.current.createOffer()
       await peerRef.current.setLocalDescription(offerDescription)
 
-      toast({
-        title: "Conexão criada",
-        description: "Compartilhe o código de conexão com seu convidado",
-      })
+      // Espera até que todos os candidatos ICE sejam reunidos
+      peerRef.current.onicegatheringstatechange = () => {
+        console.log("ICE Gathering State:", peerRef.current?.iceGatheringState)
+        if (peerRef.current?.iceGatheringState === "complete") {
+          const offerString = btoa(JSON.stringify(peerRef.current.localDescription))
+          setOffer(offerString)
+
+          toast({
+            title: "Conexão criada",
+            description: "Compartilhe o código de conexão com seu convidado",
+          })
+
+          setIsLoading(false)
+        }
+      }
     } catch (error) {
       console.error("Erro ao criar conexão:", error)
       setIsLoading(false)
@@ -184,10 +186,18 @@ export default function P2PConnection() {
         configureChannel(channelRef.current)
       }
 
-      peerRef.current.onicecandidate = (e) => {
-        if (!e.candidate) {
-          const answerString = btoa(JSON.stringify(peerRef.current?.localDescription))
+      peerRef.current.onicegatheringstatechange = () => {
+        console.log("ICE Gathering State:", peerRef.current?.iceGatheringState)
+        if (peerRef.current?.iceGatheringState === "complete") {
+          const answerString = btoa(JSON.stringify(peerRef.current.localDescription))
           setGuestAnswer(answerString)
+
+          toast({
+            title: "Conexão criada",
+            description: "Compartilhe o código de conexão com seu convidado",
+          })
+
+          setIsLoading(false)
         }
       }
 
@@ -385,7 +395,7 @@ export default function P2PConnection() {
                   <div className="flex space-x-2">
                     <Button
                       onClick={finalizeConnection}
-                      disabled={!offer || !answer }
+                      disabled={!offer || !answer}
                       className="flex-1"
                     >
                       Finalizar Conexão
